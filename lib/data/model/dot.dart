@@ -1,5 +1,5 @@
 class Dot{
-  Dot(this.x, this.y, [this.size = 1]);
+  Dot(this.x, this.y, this.maxRefreshValue, [this.size = 1]);
   bool isActive = true;
   int refreshCount = 0;
   int maxRefreshValue = 500;

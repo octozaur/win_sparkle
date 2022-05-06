@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FluentApp(
-
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(brightness: Brightness.dark),
       home: MainScreen(),
     );
@@ -33,7 +33,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen>{
 
-  int index = 2;
+  int index = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +48,7 @@ class _MainScreenState extends State<MainScreen>{
         displayMode: PaneDisplayMode.compact,
         items: [
           PaneItem(
-            icon: const Icon(FluentIcons.color),
+            icon: const Icon(FluentIcons.move),
             title: const Text("Effect_01"),
           ),
           PaneItem(
@@ -56,8 +56,12 @@ class _MainScreenState extends State<MainScreen>{
             title: const Text("Effect_02"),
           ),
           PaneItem(
-            icon: const Icon(FluentIcons.step),
+            icon: const Icon(FluentIcons.color),
             title: const Text("Effect_03"),
+          ),
+          PaneItem(
+            icon: const Icon(FluentIcons.step),
+            title: const Text("Effect_04"),
           )
         ]
       ),
@@ -66,6 +70,7 @@ class _MainScreenState extends State<MainScreen>{
         children: const [
           Effect1(),
           Effect2(),
+          SizedBox(),
           SizedBox()
         ],
       ),
