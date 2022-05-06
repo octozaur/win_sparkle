@@ -23,7 +23,7 @@ class Effect2Painter extends CustomPainter{
     double maxSize = 20;
 
     double length = 0;
-    double maxLength = 100;
+    double maxLength = 50;
     double increaseStep = 0.7;
 
     for(int i = 0; i < dots.length; i ++){
@@ -40,6 +40,7 @@ class Effect2Painter extends CustomPainter{
       }
       //print("${dots[i].x}, ${dots[i].y}");
     }
+
     //print(chasers.length);
 
     for(int i = 0; i < chasers.length; i++){
@@ -49,13 +50,19 @@ class Effect2Painter extends CustomPainter{
       /*if((chasers[i].trace.last.x + maxSize/2 >= x && chasers[i].trace.last.x - maxSize/2 <= x) && (chasers[i].trace.last.y + maxSize/2 >= y && chasers[i].trace.last.y - maxSize/2 <= y )){
         chasers[i].done = true;
       }*/
+
       if(!chasers[i].done){
         chasers[i].addCircleToTrace(x, y, maxSize);
       }
+      length = lengthBetweenPoints(Offset(chasers[i].trace.last.x, chasers[i].trace.last.y), Offset(x, y));
+      if(length <= maxSize){
+        //chasers[i].trace.removeLast();
+        chasers[i].doneIncrement();
+      }
 
       for(int j = 0; j < chasers[i].trace.length; j++){
-        canvas.drawCircle(Offset(chasers[i].trace[j].x, chasers[i].trace[j].y), chasers[i].trace[j].size, paint..color=getColor(chasers[i].trace[j], maxSize));
         chasers[i].trace[j].increaseSize(increaseStep);
+        canvas.drawCircle(Offset(chasers[i].trace[j].x, chasers[i].trace[j].y), chasers[i].trace[j].size, paint..color=getColor(chasers[i].trace[j], maxSize));
         if(chasers[i].trace[j].size >= maxSize){
           chasers[i].trace.removeAt(j);
         }
@@ -63,7 +70,6 @@ class Effect2Painter extends CustomPainter{
 
       if(chasers[i].trace.isEmpty){
         chasers.removeAt(i);
-        break;
       }
     }
 
@@ -76,7 +82,7 @@ class Effect2Painter extends CustomPainter{
   }
 
   Color getColor(Circle circle, double maxSize){
-    if(circle.size <= maxSize && circle.size >= maxSize*0.9){
+    if(circle.size >= maxSize*0.9){
       return const Color(0xfff71000);
     } else if(circle.size < maxSize*0.9 && circle.size >= maxSize*0.8){
       return const Color(0xfff74e00);

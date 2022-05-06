@@ -24,35 +24,54 @@ class Effect1Painter extends CustomPainter{
     List<Circle> tempDeleteC = [];
     List<int> tempDeleteR = [];
     rays.add(Ray(tan(vector.radians(deg.toDouble())), x, y));
-    rays.asMap().forEach((key, e) {
+    for(int i = 0; i < rays.length; i++){
+      for(int j = 0; j < rays[i].dots.length; j ++){
+        canvas.drawCircle(Offset(rays[i].dots[j].x, rays[i].dots[j].y), rays[i].dots[j].size, paint..color=getColor(rays[i].dots[j], rays[i].dotSize));
+        if(rays[i].dots[j].size == 0){
+          rays[i].dots.removeAt(j);
+        }
+      }
+      rays[i].addDot();
+      if(rays[i].dots.isEmpty){
+        rays.removeAt(i);
+      }
+    }
+    /*rays.asMap().forEach((key, e) {
       e.dots.forEach((k) {
         canvas.drawCircle(Offset(k.x, k.y), k.size, paint..color=getColor(k, e.dotSize));
-        /*if(k.size == 0){
+        *//*if(k.size == 0){
          tempDeleteC.add(k);
-        }*/
+        }*//*
       });
       e.addDot();
-      /*tempDeleteC.forEach((a) {
+      *//*tempDeleteC.forEach((a) {
         e.dots.remove(a);
       });
       tempDeleteC = [];
       if(e.dots.length == 0){
         tempDeleteR.add(key);
-      }*/
-    });
+      }*//*
+    });*/
     /*tempDeleteR.forEach((e) {
       rays.removeAt(e);
     });
     tempDeleteC = [];*/
     double circleStartSize = 40;
     circles.add(Circle(circleStartSize, x, y));
-    circles.forEach((e) {
+    for(int i = 0; i < circles.length; i++){
+      canvas.drawCircle(Offset(circles[i].x, circles[i].y), circles[i].size, paint..color=getColor(circles[i], circleStartSize));
+      circles[i].reduceSize();
+      if(circles[i].size == 0){
+        circles.removeAt(i);
+      }
+    }
+/*    circles.forEach((e) {
       canvas.drawCircle(Offset(e.x, e.y), e.size, paint..color=getColor(e, circleStartSize));
       e.reduceSize();
-      /*if(e.size == 0){
+      *//*if(e.size == 0){
         tempDeleteC.add(e);
-      }*/
-    });
+      }*//*
+    });*/
     /*tempDeleteC.forEach((e) {
       circles.remove(e);
     });*/

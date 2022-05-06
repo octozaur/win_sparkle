@@ -20,7 +20,7 @@ class Ray{
     dots.forEach((e) {
       e.reduceSize();
     });
-    if(dots.length < maxSize){
+    if(size < maxSize){
       double x = 0;
       double y = 0;
       if(animatoinType == 0){
@@ -43,6 +43,7 @@ class Ray{
 
       //print("x: $x | y: $y");
       dots.add(Circle(dotSize, x, y));
+      size++;
     }
   }
 }

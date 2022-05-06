@@ -9,6 +9,8 @@ class ChaseElement{
   late List<Circle> trace;
   double maxLength;
   double step = 10;
+  int doneCondition = 5;
+  int doneCount = 0;
   bool done = false;
 
   void addCircleToTrace(double xb, double yb, double maxSize){
@@ -20,5 +22,12 @@ class ChaseElement{
     double y = (1 - t)*ya + t*yb;
     double size = Dot(0, 0).size;
     trace.add(Circle(size, x, y));
+  }
+
+  void doneIncrement(){
+    doneCount++;
+    if(doneCount>=doneCondition){
+      done = true;
+    }
   }
 }
