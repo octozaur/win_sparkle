@@ -2,8 +2,11 @@ import 'dart:math';
 
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:win_test/presentation/effects/drawer.dart';
 import 'package:win_test/presentation/effects/effect1.dart';
 import 'package:win_test/presentation/effects/effect2.dart';
+import 'package:win_test/presentation/effects/image_drawer.dart';
+import 'package:win_test/presentation/effects/pixel_sorter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,7 +36,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen>{
 
-  int index = 3;
+  int index = 4;
 
   @override
   Widget build(BuildContext context) {
@@ -57,11 +60,15 @@ class _MainScreenState extends State<MainScreen>{
           ),
           PaneItem(
             icon: const Icon(FluentIcons.color),
-            title: const Text("Effect_03"),
+            title: const Text("Drawer"),
           ),
           PaneItem(
             icon: const Icon(FluentIcons.step),
             title: const Text("Effect_04"),
+          ),
+          PaneItem(
+            icon: const Icon(FluentIcons.image_pixel),
+            title: const Text("Pixel Sorter"),
           )
         ]
       ),
@@ -70,8 +77,9 @@ class _MainScreenState extends State<MainScreen>{
         children: const [
           Effect1(),
           Effect2(),
-          SizedBox(),
-          SizedBox()
+          Drawer(),
+          ImageDrawer(),
+          PixelSorter()
         ],
       ),
     );

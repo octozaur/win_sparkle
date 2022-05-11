@@ -6,7 +6,8 @@ class SliderSetting extends StatelessWidget {
     required this.value,
     required this.min,
     required this.max,
-    required this.action
+    required this.action,
+    this.isInt = true
   }) : super(key: key);
 
   String title;
@@ -14,6 +15,7 @@ class SliderSetting extends StatelessWidget {
   double min;
   double max;
   Function(double) action;
+  bool isInt;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +35,7 @@ class SliderSetting extends StatelessWidget {
         ),
         SizedBox(
           width: 35,
-          child: Text(value.toInt().toString(), style: TextStyle(color: Colors.white),),
+          child: Text(isInt ?value.toInt().toString() :(((value*10).toInt())/10).toString(), style: TextStyle(color: Colors.white),),
         )
       ],
     );

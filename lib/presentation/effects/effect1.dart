@@ -20,10 +20,10 @@ class _Effect1State extends State<Effect1> with SingleTickerProviderStateMixin{
   List<Circle> circles = [];
   List<Ray> rays = [];
   int degreeStep = 10;
-  double maxSize = 30;
+  double maxSize = 70;
   double sizeChangeStep = 1;
   double displacementChangeStep = 10;
-  int maxTraceSize = 10;
+  int maxTraceSize = 25;
   bool isInCenter = false;
   bool isRgb = true;
 
