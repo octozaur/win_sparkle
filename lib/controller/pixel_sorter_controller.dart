@@ -34,16 +34,20 @@ class PixelSorterController {
   double minBrightness = 0.1;
   double maxBrightness = 0.7;
 
+  bool xMode = false;
+
   void setSizeRange() {
     maxX = image!.width;
     maxY = image!.height;
   }
 
   void setStartPointX(int x) {
+    print(x);
     startX = x;
   }
 
   void setStartPointY(int y) {
+    print(y);
     startY = y;
   }
 
@@ -98,30 +102,28 @@ class PixelSorterController {
     }
   }
 
-  void quickSortList(List<String> pixelColorMap, int low, int high){
+  void quickSortList(List<int> pixelColors, int low, int high){
     if(low < high){
-      int pi = partitionMap(pixelColorMap, low, high);
+      int pi = partitionList(pixelColors, low, high);
 
-      quickSortList(pixelColorMap, low, pi - 1);
-      quickSortList(pixelColorMap, pi+1, high);
+      quickSortList(pixelColors, low, pi - 1);
+      quickSortList(pixelColors, pi+1, high);
     }
   }
 
-  int partitionMap(List<String> pixelColorMap, int low, int high){
-    int pivot =getBrightnessFromHex(int.parse(pixelColorMap.last.split("|").last));
+  int partitionList(List<int> pixelColors, int low, int high){
+    int pivot = getBrightnessFromHex(pixelColors[high]);
     int i = low - 1;
 
-    bool condition = true;
     for(int j = low; j <= high - 1; j++){
       count ++;
       //print(sortIncreases);
-      condition = getIsIncreaseConditionMap(getBrightnessFromHex(int.parse(pixelColorMap[j].split("|").last)), pivot);
-      if(condition){
+      if(getIsIncreaseConditionMap(getBrightnessFromHex(pixelColors[j]), pivot)){
         i++;
-        swapRadial(pixelColorMap[j].split("|").first, pixelColorMap[i].split("|").first);
+        swapRadial(pixelColors, i, j);
       }
     }
-    swapRadial(pixelColorMap[i+1].split("|").first, pixelColorMap[high].split("|").first);
+    swapRadial(pixelColors, i + 1, high);
     return i+1;
   }
 
@@ -166,17 +168,24 @@ class PixelSorterController {
     tempImage!.setPixelRgba(x2, y2, temp.red, temp.green, temp.blue);
   }
 
-  void swapRadial(String val1, String val2){
-    List<String> dVal1 = val1.split(",");
-    List<String> dVal2 = val2.split(",");
-    Color temp = getColor(int.parse(dVal1[0]), int.parse(dVal1[1]));
-    tempImage!.setPixelRgba(int.parse(dVal1[0]), int.parse(dVal1[1]), getColor(int.parse(dVal2[0]), int.parse(dVal2[1])).red, getColor(int.parse(dVal2[0]), int.parse(dVal2[1])).green, getColor(int.parse(dVal2[0]), int.parse(dVal2[1])).blue);
-    tempImage!.setPixelRgba(int.parse(dVal2[0]), int.parse(dVal2[1]), temp.red, temp.green, temp.blue);
+  void swapRadial(List<int> pixelColors, int i, int j){
+    int temp = pixelColors[i];
+    pixelColors[i] = pixelColors[j];
+    pixelColors[j] = temp;
   }
 
   int getBrightness(int x, int y){
     Color color = getColor(x, y);
     return color.red + color.green + color.blue;
+  }
+
+  void setPixel(int x, int y, int hex) {
+    if(xMode){
+      tempImage!.setPixelSafe(x, y, hex);
+    }else{
+      Color color = Color(hex);
+      tempImage!.setPixelRgba(x.toInt(), y.toInt(), color.red, color.green, color.blue);
+    }
   }
 
   Future pixelSortingQuickRadial() async{
@@ -186,45 +195,76 @@ class PixelSorterController {
     int height = tempImage!.height;
     double x = 0;
     double y = 0;
+    double x1 = 0;
+    double y1 = 0;
     double t = 0;
+    Random rand = Random();
+    int r, g, b;
     int k = 0;
+    Color color;
     double brightness = 0;
-    List<int> tempPixelsMap = [];
+    List<int> tempPixels = [];
     //i -> x ; j -> y
+
+    int f = 0;
     for(int i = 0; i < height; i++){
-      printLog(i, height);
+      printLog(i, height, 0);
+      if(f == 0){
+        f = 1;
+      }else if(f == 1){
+        f = 2;
+      }else if(f == 2){
+        f = 0;
+      }
       for(int j = width - 1; j > startX; j--){
         //x = j.toDouble();
         //y = (j*(i - startY) - (width - 1)*(i - startY) + i*(width - 1 - startX))/(width - 1 - startX);
         x = j.toDouble();
-        t = (x - width - 1)/(startX - width - 1);
-        y = i - (startY - i)*t;
+        y = ((x - startX)*(i - startY) + startY*(width - 1 - startX))/(width - 1 - startX);
+        // t = (x - startX)/(width - 1 - startX);
+        // y = startY - (i - startY)*t;
         brightness = getBrightness(x.toInt(), y.toInt())/765;
-        if(brightness < maxBrightness && brightness > minBrightness){
-          k = j;
-          //tempPixelsMap["${x.toInt()},${y.toInt()}"] = getColorHex(x.toInt(), y.toInt());
-          tempPixelsMap.add("${x.toInt()},${y.toInt()}|${getColorHex(x.toInt(), y.toInt())}");
-          brightness = getBrightness(x.toInt(), y.toInt() + 1)/765;
+        if(tempPixels.isNotEmpty){
+          /*if(f == 0){
+            tempImage!.setPixelRgba(x.toInt(), y.toInt(), 255, 0, 0);
+          }else if(f == 1){
+            tempImage!.setPixelRgba(x.toInt(), y.toInt(), 0, 255, 0);
+          }else{
+            tempImage!.setPixelRgba(x.toInt(), y.toInt(), 0, 0, 255);
+          }*/
+          setPixel(x.toInt(), y.toInt(), tempPixels.last);
+          tempPixels.removeLast();
+
+
+        }else{
           if(brightness < maxBrightness && brightness > minBrightness){
-            //tempPixelsMap["${x.toInt()},${y.toInt() + 1}"] = getColorHex(x.toInt(), y.toInt() + 1);
-            tempPixelsMap.add("${x.toInt()},${y.toInt() + 1}|${getColorHex(x.toInt(), y.toInt()) + 1}");
+            k = j;
+            //TEST
+            // r = rand.nextInt(255);
+            // g = rand.nextInt(255);
+            // b = rand.nextInt(255);
+            // Color tempColor = Color.fromRGBO(r, g, b, 1);
+            // tempPixels.add(tempColor.value);
+
+            //original value
+            tempPixels.add(getColorHex(x.toInt(), y.toInt()));
             while(true){
               if(k-1 > startX){
-                x = k-1;
-                y = ((k-1)*(i - startY) - (width - 1)*(i - startY) + i*(width - 1 - startX))/(width - 1 - startX);
-                brightness = getBrightness(x.toInt(), y.toInt())/765;
+                x1 = k-1;
+                y1 = ((x1 - startX)*(i - startY) + startY*(width - 1 - startX))/(width - 1 - startX);
+                // t = (x1 - startX)/(width - 1 - startX);
+                // y1 = startY - (i - startY)*t;
+
+                //remember effect
+                //y1 = i - (startY - i)*t;
+                brightness = getBrightness(x1.toInt(), y1.toInt())/765;
                 if(brightness < maxBrightness && brightness > minBrightness){
                   k--;
-                  //tempPixelsMap["${x.toInt()},${y.toInt()}"] = getColorHex(x.toInt(), y.toInt());
-                  tempPixelsMap.add("${x.toInt()},${y.toInt()}|${getColorHex(x.toInt(), y.toInt())}");
-                }else{
-                  break;
-                }
+                  //TEST
+                  //tempPixels.add(tempColor.value);
 
-                brightness = getBrightness(x.toInt(), y.toInt() + 1)/765;
-                if(brightness < maxBrightness && brightness > minBrightness){
-                  //tempPixelsMap["${x.toInt()},${y.toInt() + 1}"] = getColorHex(x.toInt(), y.toInt() + 1);
-                  tempPixelsMap.add("${x.toInt()},${y.toInt() + 1}|${getColorHex(x.toInt(), y.toInt()) + 1}");
+                  //original value
+                  tempPixels.add(getColorHex(x1.toInt(), y1.toInt()));
                 }else{
                   break;
                 }
@@ -232,11 +272,162 @@ class PixelSorterController {
                 break;
               }
             }
-            quickSortList(tempPixelsMap, 0, tempPixelsMap.length - 1);
-            tempPixelsMap.clear();
-            j = k;
+            quickSortList(tempPixels, 0, tempPixels.length - 1);
+            setPixel(x.toInt(), y.toInt(), tempPixels.last);
+            tempPixels.removeLast();
           }
-          
+        }
+      }
+    }
+
+    tempPixels.clear();
+    for(int i = 0; i < height; i++){
+      printLog(i, height, 1);
+      for(int j = 0; j < startX; j++){
+        x = j.toDouble();
+        y = ((x - startX)*(i - startY) + startY*( - startX))/( - startX);
+        brightness = getBrightness(x.toInt(), y.toInt())/765;
+        if(tempPixels.isNotEmpty){
+          setPixel(x.toInt(), y.toInt(), tempPixels.last);
+          tempPixels.removeLast();
+        }else{
+          if(brightness < maxBrightness && brightness > minBrightness){
+            k = j;
+            //TEST
+            // r = rand.nextInt(255);
+            // g = rand.nextInt(255);
+            // b = rand.nextInt(255);
+            // Color tempColor = Color.fromRGBO(r, g, b, 1);
+            // tempPixels.add(tempColor.value);
+
+            //original value
+            tempPixels.add(getColorHex(x.toInt(), y.toInt()));
+            while(true){
+              if(k+1 < startX){
+                x1 = k+1;
+                y1 = ((x1 - startX)*(i - startY) + startY*( - startX))/( - startX);
+                brightness = getBrightness(x1.toInt(), y1.toInt())/765;
+                if(brightness < maxBrightness && brightness > minBrightness){
+                  k++;
+                  //TEST
+                  //tempPixels.add(tempColor.value);
+
+                  //original value
+                  tempPixels.add(getColorHex(x1.toInt(), y1.toInt()));
+                }else{
+                  break;
+                }
+              }else{
+                break;
+              }
+            }
+            quickSortList(tempPixels, 0, tempPixels.length - 1);
+            setPixel(x.toInt(), y.toInt(), tempPixels.last);
+            tempPixels.removeLast();
+          }
+        }
+      }
+    }
+
+
+    tempPixels.clear();
+    for(int i = 0; i < width; i++){
+      printLog(i, width, 2);
+      for(int j = 0; j < startY; j++){
+        y = j.toDouble();
+        x = ((y)*(startX - i) + i*(startY))/(startY);
+        //y = ((x)*(startY - startY) + startY*( - startX))/( - startX);
+
+        // x = j.toDouble();
+        //y = ((x - startX)*(i - startY) + startY*( - startX))/( - startX);
+        brightness = getBrightness(x.toInt(), y.toInt())/765;
+        if(tempPixels.isNotEmpty){
+          setPixel(x.toInt(), y.toInt(), tempPixels.last);
+          tempPixels.removeLast();
+        }else{
+          if(brightness < maxBrightness && brightness > minBrightness){
+            k = j;
+            //TEST
+            // r = rand.nextInt(255);
+            // g = rand.nextInt(255);
+            // b = rand.nextInt(255);
+            // Color tempColor = Color.fromRGBO(r, g, b, 1);
+            // tempPixels.add(tempColor.value);
+
+            //original value
+            tempPixels.add(getColorHex(x.toInt(), y.toInt()));
+            while(true){
+              if(k+1 < startY){
+                y1 = k+1;
+                x1 = ((y1)*(startX - i) + i*(startY))/(startY);
+                brightness = getBrightness(x1.toInt(), y1.toInt())/765;
+                if(brightness < maxBrightness && brightness > minBrightness){
+                  k++;
+                  //TEST
+                  //tempPixels.add(tempColor.value);
+
+                  //original value
+                  tempPixels.add(getColorHex(x1.toInt(), y1.toInt()));
+                }else{
+                  break;
+                }
+              }else{
+                break;
+              }
+            }
+            quickSortList(tempPixels, 0, tempPixels.length - 1);
+            setPixel(x.toInt(), y.toInt(), tempPixels.last);
+            tempPixels.removeLast();
+          }
+        }
+      }
+    }
+
+    tempPixels.clear();
+    for(int i = 0; i < width; i++){
+      printLog(i, width, 3);
+      for(int j = height - 1; j > startY; j--){
+        y = j.toDouble();
+        x = ((y - height - 1)*(startX - i) + i*(startY - height - 1))/(startY - height - 1);
+        brightness = getBrightness(x.toInt(), y.toInt())/765;
+        if(tempPixels.isNotEmpty){
+          setPixel(x.toInt(), y.toInt(), tempPixels.last);
+          tempPixels.removeLast();
+        }else{
+          if(brightness < maxBrightness && brightness > minBrightness){
+            k = j;
+            //TEST
+            // r = rand.nextInt(255);
+            // g = rand.nextInt(255);
+            // b = rand.nextInt(255);
+            // Color tempColor = Color.fromRGBO(r, g, b, 1);
+            // tempPixels.add(tempColor.value);
+
+            //original value
+            tempPixels.add(getColorHex(x.toInt(), y.toInt()));
+            while(true){
+              if(k-1 > startY){
+                y1 = k-1;
+                x1 = ((y1 - height - 1)*(startX - i) + i*(startY - height - 1))/(startY - height - 1);
+                brightness = getBrightness(x1.toInt(), y1.toInt())/765;
+                if(brightness < maxBrightness && brightness > minBrightness){
+                  k--;
+                  //TEST
+                  //tempPixels.add(tempColor.value);
+
+                  //original value
+                  tempPixels.add(getColorHex(x1.toInt(), y1.toInt()));
+                }else{
+                  break;
+                }
+              }else{
+                break;
+              }
+            }
+            quickSortList(tempPixels, 0, tempPixels.length - 1);
+            setPixel(x.toInt(), y.toInt(), tempPixels.last);
+            tempPixels.removeLast();
+          }
         }
       }
     }
@@ -246,10 +437,11 @@ class PixelSorterController {
     newFile = await File(newPath).writeAsBytes(img.encodePng(tempImage!));
   }
 
-  void printLog(int i, int height){
+  void printLog(int i, int height,int iter){
     if(i % 100 == 0){
       print(i);
       print(height);
+      print(iter);
       print("==============");
     }
   }

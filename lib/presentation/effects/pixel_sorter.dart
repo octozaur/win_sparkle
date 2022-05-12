@@ -21,7 +21,7 @@ class _PixelSorterState extends State<PixelSorter>{
   late PixelSorterController controller;
 
   double settingsWidth = 400;
-  double settingsHeight = 600;
+  double settingsHeight = 700;
   double controlPanelWidth = 50;
   double imageWidth = 0;
 
@@ -89,11 +89,11 @@ class _PixelSorterState extends State<PixelSorter>{
           _image(controller.file!),
         if(state == PixelSortingState.radial)
           Positioned(
-            top: (controller.startY*imageWidth)/controller.maxY,
-            right: (controller.startX*((controller.maxY*imageWidth)/controller.maxX))/controller.maxX,
+            top: (controller.startY*((controller.maxY*imageWidth)/controller.maxX))/controller.maxY,
+            left: (controller.startX*imageWidth)/controller.maxX,
             child: Container(
-              width: 5,
-              height: 5,
+              width: 15,
+              height: 15,
               color: Colors.red,
             ),
           ),
@@ -134,6 +134,8 @@ class _PixelSorterState extends State<PixelSorter>{
                 }else{
                   setState(() {
                     controller.setSizeRange();
+                    controller.setStartPointX(0);
+                    controller.setStartPointY(0);
                   });
                   //controller.setStartPoint(x, y)
                 }
@@ -242,6 +244,13 @@ class _PixelSorterState extends State<PixelSorter>{
           },
           isInt: false,
         ),
+        CheckBoxSetting(
+            title: "X Mode",
+            value: controller.xMode,
+            action: (val){setState(() {
+              controller.xMode = val;
+            });}
+            ),
         _button("Restart", () async{
 
             await controller.pixelSortingQuick().then((value) {setState(() {print("ready");});});
