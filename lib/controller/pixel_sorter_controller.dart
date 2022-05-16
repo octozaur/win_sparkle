@@ -2,24 +2,27 @@
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
+import 'package:win_test/data/model/circle.dart';
 
 class PixelSorterController {
-  PixelSorterController(this.context);
+  PixelSorterController(this.context) : mapImagePath = "D:\\test_images\\bwmaps\\new_copy_${DateTime.now().microsecondsSinceEpoch}_bw.png";
 
   late BuildContext context;
   File? file;
 
   File? newFile;
-  File? bWFile;
+  File? mapFile;
 
   img.Image? image;
   img.Image? tempImage;
+  img.Image? mapImage;
   Color? color;
   int count = 0;
 
@@ -27,6 +30,7 @@ class PixelSorterController {
   int startY = 1;
   int maxX = 1;
   int maxY = 1;
+  String mapImagePath = "";
 
   bool sortIncreases = false;
   bool isVertical = true;
@@ -179,6 +183,13 @@ class PixelSorterController {
     return color.red + color.green + color.blue;
   }
 
+  bool isMapValid(int x, int y){
+    int color = getMapColorHex(x, y);
+    return color == 0xffffffff ? true: false;
+  }
+
+
+
   void setPixel(int x, int y, int hex) {
     if(xMode){
       tempImage!.setPixelSafe(x, y, hex);
@@ -189,7 +200,7 @@ class PixelSorterController {
   }
 
   Future pixelSortingQuickRadial() async{
-    prepareBWImage();
+    //prepareBWImage();
     tempImage = image!.clone();
     int width = tempImage!.width;
     int height = tempImage!.height;
@@ -223,7 +234,6 @@ class PixelSorterController {
         y = ((x - startX)*(i - startY) + startY*(width - 1 - startX))/(width - 1 - startX);
         // t = (x - startX)/(width - 1 - startX);
         // y = startY - (i - startY)*t;
-        brightness = getBrightness(x.toInt(), y.toInt())/765;
         if(tempPixels.isNotEmpty){
           /*if(f == 0){
             tempImage!.setPixelRgba(x.toInt(), y.toInt(), 255, 0, 0);
@@ -234,10 +244,9 @@ class PixelSorterController {
           }*/
           setPixel(x.toInt(), y.toInt(), tempPixels.last);
           tempPixels.removeLast();
-
-
         }else{
-          if(brightness < maxBrightness && brightness > minBrightness){
+
+          if(isMapValid(x.toInt(), y.toInt())){
             k = j;
             //TEST
             // r = rand.nextInt(255);
@@ -257,8 +266,7 @@ class PixelSorterController {
 
                 //remember effect
                 //y1 = i - (startY - i)*t;
-                brightness = getBrightness(x1.toInt(), y1.toInt())/765;
-                if(brightness < maxBrightness && brightness > minBrightness){
+                if(isMapValid(x1.toInt(), y1.toInt())){
                   k--;
                   //TEST
                   //tempPixels.add(tempColor.value);
@@ -286,12 +294,11 @@ class PixelSorterController {
       for(int j = 0; j < startX; j++){
         x = j.toDouble();
         y = ((x - startX)*(i - startY) + startY*( - startX))/( - startX);
-        brightness = getBrightness(x.toInt(), y.toInt())/765;
         if(tempPixels.isNotEmpty){
           setPixel(x.toInt(), y.toInt(), tempPixels.last);
           tempPixels.removeLast();
         }else{
-          if(brightness < maxBrightness && brightness > minBrightness){
+          if(isMapValid(x.toInt(), y.toInt())){
             k = j;
             //TEST
             // r = rand.nextInt(255);
@@ -306,8 +313,7 @@ class PixelSorterController {
               if(k+1 < startX){
                 x1 = k+1;
                 y1 = ((x1 - startX)*(i - startY) + startY*( - startX))/( - startX);
-                brightness = getBrightness(x1.toInt(), y1.toInt())/765;
-                if(brightness < maxBrightness && brightness > minBrightness){
+                if(isMapValid(x1.toInt(), y1.toInt())){
                   k++;
                   //TEST
                   //tempPixels.add(tempColor.value);
@@ -340,12 +346,11 @@ class PixelSorterController {
 
         // x = j.toDouble();
         //y = ((x - startX)*(i - startY) + startY*( - startX))/( - startX);
-        brightness = getBrightness(x.toInt(), y.toInt())/765;
         if(tempPixels.isNotEmpty){
           setPixel(x.toInt(), y.toInt(), tempPixels.last);
           tempPixels.removeLast();
         }else{
-          if(brightness < maxBrightness && brightness > minBrightness){
+          if(isMapValid(x.toInt(), y.toInt())){
             k = j;
             //TEST
             // r = rand.nextInt(255);
@@ -360,8 +365,7 @@ class PixelSorterController {
               if(k+1 < startY){
                 y1 = k+1;
                 x1 = ((y1)*(startX - i) + i*(startY))/(startY);
-                brightness = getBrightness(x1.toInt(), y1.toInt())/765;
-                if(brightness < maxBrightness && brightness > minBrightness){
+                if(isMapValid(x1.toInt(), y1.toInt())){
                   k++;
                   //TEST
                   //tempPixels.add(tempColor.value);
@@ -389,12 +393,11 @@ class PixelSorterController {
       for(int j = height - 1; j > startY; j--){
         y = j.toDouble();
         x = ((y - height - 1)*(startX - i) + i*(startY - height - 1))/(startY - height - 1);
-        brightness = getBrightness(x.toInt(), y.toInt())/765;
         if(tempPixels.isNotEmpty){
           setPixel(x.toInt(), y.toInt(), tempPixels.last);
           tempPixels.removeLast();
         }else{
-          if(brightness < maxBrightness && brightness > minBrightness){
+          if(isMapValid(x.toInt(), y.toInt())){
             k = j;
             //TEST
             // r = rand.nextInt(255);
@@ -409,8 +412,7 @@ class PixelSorterController {
               if(k-1 > startY){
                 y1 = k-1;
                 x1 = ((y1 - height - 1)*(startX - i) + i*(startY - height - 1))/(startY - height - 1);
-                brightness = getBrightness(x1.toInt(), y1.toInt())/765;
-                if(brightness < maxBrightness && brightness > minBrightness){
+                if(isMapValid(x1.toInt(), y1.toInt())){
                   k--;
                   //TEST
                   //tempPixels.add(tempColor.value);
@@ -448,7 +450,7 @@ class PixelSorterController {
 
 
   Future pixelSortingQuick() async{
-    prepareBWImage();
+    //prepareBWImage();
     tempImage = image!.clone();
     int k = 0;
     double tempBrightness = 0;
@@ -470,19 +472,16 @@ class PixelSorterController {
       }
       for(int j = 0; j < height; j++){
 
-        double brightness = (isVertical? getBrightness(i, j): getBrightness(j, i))/765;
-        if(brightness < maxBrightness && brightness > minBrightness){
+        if(isVertical? isMapValid(i, j): isMapValid(j, i)){
           k = j;
-          tempBrightness = brightness;
 
           while(true){
             count++;
             if(k+1 < height){
-              brightness = (isVertical? getBrightness(i, k + 1) : getBrightness(k + 1, i))/765;
-              if(brightness > maxBrightness || brightness < minBrightness){
-                break;
-              }else{
+              if(isVertical? isMapValid(i, k + 1): isMapValid(k + 1, i)){
                 k++;
+              }else{
+                break;
               }
             }else{
               break;
@@ -568,6 +567,67 @@ class PixelSorterController {
     File(newPath).writeAsBytes(img.encodePng(image!)).then((value) => newFile = value);
   }
 
+  Future addPathToMap(List<Circle> points, double imageWidth) async{
+    /*final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    var paint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 10
+      ..strokeCap = StrokeCap.round;
+    for(int i = 0; i < points.length; i++){
+      canvas.drawCircle(Offset(points[i].x, points[i].y), points[i].size/2, paint..color = points[i].isWhite ? Colors.white: Colors.black);
+    }
+    Picture picture = recorder.endRecording();
+
+    final canvasImage = await picture.toImage(image!.width, image!.height);
+
+    print(canvasImage);
+    ByteData? bytes = await canvasImage.toByteData();
+
+    print(bytes);*/
+
+    //img.Image imgg = img..decodeImage(bytes!.buffer.asInt8List());
+    double k = mapImage!.width/imageWidth;
+    double d = 0.1;
+    double x, y, rad;
+    for(int i = 0; i < points.length; i++){
+      mapImage = img.drawCircle(mapImage!, (points[i].x*k).toInt(), (points[i].y*k).toInt(), (points[i].size*k)~/2, points[i].isWhite ? Colors.white.value: Colors.black.value);
+      mapImage = img.fillCircle(mapImage!, (points[i].x*k).toInt(), (points[i].y*k).toInt(), (points[i].size*k)~/2, points[i].isWhite ? Colors.white.value: Colors.black.value);
+    }
+
+    points.clear();
+    String path = "D:\\test_images\\bwmaps\\new_copy_${DateTime.now().microsecondsSinceEpoch}_test.png";
+    mapFile = await File(path).writeAsBytes(img.encodePng(mapImage!));
+
+  }
+
+  Future changeMapImage(bool isWhite, Offset position, double size, double imageWidth, double imageHeight) async{
+    img.Image tempImage = mapImage!;
+    double k = tempImage.width/imageWidth;
+    double realSize = size*k;
+    Offset realPosition = Offset(position.dx*k, position.dy*k);
+    double d = 0.1;
+    double x, y, rad;
+    print("start");
+    for(int j = 1; j < realSize/2; j++){
+      for(double i = 0; i < 360; i = i + d){
+        rad = i * pi / 180;
+        x = realPosition.dx - 200 + sin(rad)*j;
+        y = realPosition.dy + cos(rad)*j;
+
+        if(isWhite){
+          tempImage.setPixelRgba(x.toInt(), y.toInt(), 255, 255, 255);
+        }else{
+          tempImage.setPixelRgba(x.toInt(), y.toInt(), 0, 0, 0);
+        }
+      }
+    }
+    print("end");
+
+    String path = "D:\\test_images\\bwmaps\\new_copy_${DateTime.now().microsecondsSinceEpoch}_bw.png";
+    mapFile = await File(path).writeAsBytes(img.encodePng(tempImage));
+  }
+
   Future prepareBWImage() async{
     img.Image tempImage = image!.clone();
     for(int i = 0; i < tempImage.width; i++){
@@ -582,10 +642,10 @@ class PixelSorterController {
         }
       }
     }
-
+    mapImage = tempImage.clone();
     //String newPath = file!.path.replaceAll(file!.path.split("/").last, "new_copy_${rand.nextInt(100000)}.png");
-    String newPath = "D:\\test_images\\bwmaps\\new_copy_${DateTime.now().microsecondsSinceEpoch}_bw.png";
-    bWFile = await File(newPath).writeAsBytes(img.encodePng(tempImage));
+    String path = "D:\\test_images\\bwmaps\\new_copy_${DateTime.now().microsecondsSinceEpoch}_bw.png";
+    mapFile = await File(path).writeAsBytes(img.encodePng(tempImage));
   }
 
   Color getColor(int x, int y){
@@ -593,6 +653,13 @@ class PixelSorterController {
     int hex = abgrToArgb(pixel32);
     //color = Color(hex);
     return Color(hex);
+  }
+
+  int getMapColorHex(int x, int y){
+    int pixel32 = mapImage!.getPixelSafe(x, y);
+    int hex = abgrToArgb(pixel32);
+    //color = Color(hex);
+    return hex;
   }
 
   int getColorHex(int x, int y){

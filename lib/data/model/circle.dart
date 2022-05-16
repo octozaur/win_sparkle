@@ -1,10 +1,11 @@
 class Circle{
-  Circle(this.size, this.x, this.y, [this.step = 0.5]);
+  Circle(this.size, this.x, this.y, {this.step = 0.5, this.isWhite = true});
 
   late double size;
   late double x;
   late double y;
   double step;
+  bool isWhite;
 
   void reduceSize(){
     if(size - step > 0){

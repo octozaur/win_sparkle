@@ -23,7 +23,7 @@ class Ray{
       double y = dots.last.y + cos(rad)*step;
 
       //print("x: $x | y: $y");
-      dots.add(Circle(dotSize, x, y, circleSizeStep));
+      dots.add(Circle(dotSize, x, y, step: circleSizeStep));
       size++;
     }
   }

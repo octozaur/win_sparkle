@@ -59,7 +59,7 @@ class Effect1Painter extends CustomPainter{
     }
 
     double circleStartSize = maxSize;
-    circles.add(Circle(circleStartSize, x, y, sizeChangeStep));
+    circles.add(Circle(circleStartSize, x, y, step: sizeChangeStep));
     for(int i = 0; i < circles.length; i++){
       canvas.drawCircle(Offset(circles[i].x, circles[i].y), circles[i].size, paint..color=getColor(circles[i], circleStartSize));
       circles[i].reduceSize();

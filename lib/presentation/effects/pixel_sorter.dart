@@ -1,8 +1,12 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:win_test/config/my_colors.dart';
 import 'package:win_test/controller/pixel_sorter_controller.dart';
+import 'package:win_test/data/model/circle.dart';
+import 'package:win_test/painters/pixel_sorter_painter.dart';
 import 'package:win_test/presentation/widgets/check_box_setting.dart';
 import 'package:win_test/presentation/widgets/slider_setting.dart';
 
@@ -23,13 +27,37 @@ class _PixelSorterState extends State<PixelSorter>{
   double settingsWidth = 400;
   double settingsHeight = 700;
   double controlPanelWidth = 50;
-  double imageWidth = 0;
+  double originalImageWidth = 0;
+  double originalImageHeight = 0;
+
+  double mapImageWidth = 0;
+  double mapImageHeight = 0;
+
+  double accentElementSize = 3;
+
+  double resultImageWidth = 0;
+  double resultImageHeight = 0;
+
+  double imageBorderHorizontal = 10;
+  double imageBorderVertical = 10;
+
+  bool showBrush = false;
 
   double dotsImageWidth = 0;
   double dotsImageHeight = 0;
   double k = 1;
   bool showOriginalImage = true;
   PixelSortingState state = PixelSortingState.radial;
+
+  double brushSize = 100;
+  double maxBrushSize = 305;
+  double minBrushSize = 1;
+  double brushSizeDelta = 10;
+  bool isBrushWhite = true;
+  Offset brushOffset = Offset(0, 0);
+  List<Circle> drawPoints = [];
+
+  bool mapOriginalMode = false;
 
 
   @override
@@ -40,8 +68,14 @@ class _PixelSorterState extends State<PixelSorter>{
 
   @override
   void didChangeDependencies() {
-    if(imageWidth == 0){
-      imageWidth = (MediaQuery.of(context).size.width - controlPanelWidth - settingsWidth)/3;
+    if(originalImageWidth == 0){
+      originalImageWidth = (MediaQuery.of(context).size.width - controlPanelWidth - settingsWidth)/3;
+    }
+    if(mapImageWidth == 0){
+      mapImageWidth = (MediaQuery.of(context).size.width - controlPanelWidth - settingsWidth)/3;
+    }
+    if(resultImageWidth == 0){
+      resultImageWidth = (MediaQuery.of(context).size.width - controlPanelWidth - settingsWidth)/3;
     }
     super.didChangeDependencies();
   }
@@ -65,11 +99,11 @@ class _PixelSorterState extends State<PixelSorter>{
                 child: Row(
                   children: [
                     if(showOriginalImage)
-                      _imageContainer(),
-                    if(controller.bWFile != null)
-                      _image(controller.bWFile!),
+                      _originalImageContainer(),
+                    if(controller.mapFile != null)
+                      _mapImageContainer(),
                     if(controller.newFile != null)
-                      _image(controller.newFile!)
+                      _resultImage(controller.newFile!)
                   ],
                 ),
               ),
@@ -79,18 +113,19 @@ class _PixelSorterState extends State<PixelSorter>{
     );
   }
 
-  Widget _imageContainer() => Container(
-    width: imageWidth,
-    height: (controller.maxY*imageWidth)/controller.maxX,
+
+  Widget _originalImageContainer() => SizedBox(
+    width: originalImageWidth,
+    height: (controller.maxY*originalImageWidth)/controller.maxX,
     child: Stack(
       children: [
 
         if(controller.file != null && controller.image != null)
-          _image(controller.file!),
+          _originalImage(controller.file!),
         if(state == PixelSortingState.radial)
           Positioned(
-            top: (controller.startY*((controller.maxY*imageWidth)/controller.maxX))/controller.maxY,
-            left: (controller.startX*imageWidth)/controller.maxX,
+            top: (controller.startY*((controller.maxY*originalImageWidth)/controller.maxX))/controller.maxY,
+            left: (controller.startX*originalImageWidth)/controller.maxX,
             child: Container(
               width: 15,
               height: 15,
@@ -101,8 +136,103 @@ class _PixelSorterState extends State<PixelSorter>{
     ),
   );
 
-  Widget _image(File file) => SizedBox(
-      width: controller.image!.width.toDouble() > imageWidth ?imageWidth : controller.image?.width.toDouble(),
+  Widget _mapImageContainer() => Listener(
+    onPointerHover: (event){
+      setState(() {
+        brushOffset = event.position;
+        if(event.position.dy <= 0 || event.position.dy > (controller.maxY*mapImageWidth)/controller.maxX - 1 || event.position.dx < originalImageWidth - controlPanelWidth + 101 || event.position.dx >= originalImageWidth - controlPanelWidth + 99 + mapImageWidth){
+          showBrush = false;
+        }else{
+          showBrush = true;
+        }
+      });
+    },
+    onPointerDown: (event){
+      setState(() {
+        if(event.buttons == 2){
+          isBrushWhite = !isBrushWhite;
+        }else if(event.buttons == 1){
+
+          // controller.changeMapImage(isBrushWhite, event.position, brushSize, mapImageWidth, (controller.maxY*mapImageWidth)/controller.maxX).then((value) {setState(() {
+          //
+          // });});
+        }
+      });
+    },
+    onPointerMove: (event){
+      setState(() {
+        brushOffset = event.position;
+        if(event.down && showBrush){
+          drawPoints.add(Circle(brushSize, event.position.dx - originalImageWidth - controlPanelWidth, event.position.dy, isWhite: isBrushWhite));
+        }
+      });
+    },
+    onPointerSignal: (event){
+      setState(() {
+        if(event is PointerScrollEvent){
+          if(event.scrollDelta.dy < 0){
+            if(brushSize < maxBrushSize){
+              brushSize += brushSizeDelta;
+            }
+          }else{
+            if(brushSize > minBrushSize){
+              if(brushSize - brushSizeDelta > 0){
+                brushSize -= brushSizeDelta;
+              }else{
+                brushSize = 1;
+              }
+            }
+          }
+        }
+      });
+    },
+    child: SizedBox(
+      width: mapImageWidth,
+      height: (controller.maxY*mapImageWidth)/controller.maxX,
+      child: Stack(
+        children: [
+
+          if(mapOriginalMode)
+           _originalImage(controller.file!),
+          if(!mapOriginalMode)
+            _mapImage(controller.mapFile!),
+          SizedBox(
+            width: mapImageWidth,
+            height: (controller.maxY*mapImageWidth)/controller.maxX,
+            child: CustomPaint(
+              painter: PixelSorterPainter(points: drawPoints),
+            ),
+          ),
+          if(showBrush)
+          Positioned(
+              top: brushOffset.dy - brushSize/2,
+              left: brushOffset.dx - originalImageWidth - controlPanelWidth - brushSize/2,
+              child: Container(
+                width: brushSize,
+                height: brushSize,
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.all(Radius.circular(brushSize)),
+                    color: isBrushWhite ? Colors.white: Colors.black
+                ),
+              )
+          ),
+
+
+        ],
+      ),
+    ),
+  );
+
+  Widget _originalImage(File file) => SizedBox(
+      width: controller.image!.width.toDouble() > originalImageWidth ?originalImageWidth : controller.image?.width.toDouble(),
+      child: Image.file(file));
+
+  Widget _mapImage(File file) => SizedBox(
+      width: controller.image!.width.toDouble() > mapImageWidth ?mapImageWidth : controller.image?.width.toDouble(),
+      child: Image.file(file));
+
+  Widget _resultImage(File file) => SizedBox(
+      width: controller.image!.width.toDouble() > resultImageWidth ?resultImageWidth : controller.image?.width.toDouble(),
       child: Image.file(file));
 
 
@@ -130,12 +260,14 @@ class _PixelSorterState extends State<PixelSorter>{
             (){
               controller.pickFile().then((value) async{
                 if(state == PixelSortingState.liner){
-                  await controller.pixelSortingQuick().then((value) {setState(() {print("ready");});});
+                  controller.prepareBWImage().then((value) {setState(() {print("ready");});});
                 }else{
-                  setState(() {
-                    controller.setSizeRange();
-                    controller.setStartPointX(0);
-                    controller.setStartPointY(0);
+                  controller.prepareBWImage().then((value) {
+                    setState(() {
+                      controller.setSizeRange();
+                      controller.setStartPointX(0);
+                      controller.setStartPointY(0);
+                    });
                   });
                   //controller.setStartPoint(x, y)
                 }
@@ -155,9 +287,10 @@ class _PixelSorterState extends State<PixelSorter>{
           _button(
             "Start",
                 () async{
-              if(state == PixelSortingState.radial){
+                if(drawPoints.isNotEmpty){
+                  await controller.addPathToMap(drawPoints, mapImageWidth);
+                }
                 await controller.pixelSortingQuickRadial().then((value) {setState(() {print("ready");});});
-              }
             },),
         if(state == PixelSortingState.radial)
         _button("Center Start", (){setState(() {
@@ -251,18 +384,36 @@ class _PixelSorterState extends State<PixelSorter>{
               controller.xMode = val;
             });}
             ),
+        CheckBoxSetting(
+            title: "Original image hint for map",
+            value: mapOriginalMode,
+            action: (val){setState(() {
+              mapOriginalMode = val;
+            });}
+        ),
+        if(state == PixelSortingState.liner)
         _button("Restart", () async{
-
+            if(drawPoints.isNotEmpty){
+              await controller.addPathToMap(drawPoints, mapImageWidth);
+            }
             await controller.pixelSortingQuick().then((value) {setState(() {print("ready");});});
             //await controller.pixelSortingBubble().then((value) {setState(() {});});
             //await controller.prepareBWImage().then((value) {setState(() {});});
 
         }),
-        _button("Generate BW map", () async{
+        _button("Generate Brightness map", () async{
 
           await controller.prepareBWImage().then((value) {setState(() {
 
           });});
+          //await controller.pixelSortingBubble().then((value) {setState(() {});});
+          //await controller.prepareBWImage().then((value) {setState(() {});});
+
+        }),
+        _button("Test gen", () async{
+
+          //await controller.prepareBWImage().then((value) {setState(() {});});
+            controller.addPathToMap(drawPoints, mapImageWidth);
           //await controller.pixelSortingBubble().then((value) {setState(() {});});
           //await controller.prepareBWImage().then((value) {setState(() {});});
 
